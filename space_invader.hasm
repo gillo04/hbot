@@ -1,0 +1,25 @@
+rol
+main:
+  mov a, 10
+  ror
+  ror
+  right:
+    fwd
+    rol
+    sht
+    ror
+    sub a, 1
+    jg right
+
+  mov a, 10
+  rol
+  rol
+  left:
+    fwd
+    ror
+    sht
+    rol
+    sub a, 1
+    jg left
+
+jmp main
