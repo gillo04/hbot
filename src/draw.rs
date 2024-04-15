@@ -64,6 +64,10 @@ pub fn draw_plane(d: &mut RaylibDrawHandle, field: &Field) {
 
 pub fn draw_robot(d: &mut RaylibDrawHandle, robot: &Robot, field: &Field, sprites: &Texture2D) {
     let robot_pos = coord_to_pos(robot.x, robot.y, &field);
+    for t in robot.aoi.iter() {
+        let t_pos = coord_to_pos(t.0 + robot.x, t.1 + robot.y, &field);
+        draw_tile(d, t_pos.x as i32, t_pos.y as i32, Color::RED);
+    }
 
     // Draw sprite
     let texture_rect = match robot.direction {

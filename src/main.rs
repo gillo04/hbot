@@ -73,6 +73,7 @@ fn main() {
         team: -1,
         color: player_color,
         name: String::from("Robot"),
+        aoi: vec![(-1, 0), (-1, -1), (0, -1), (1, -1), (1, 0)],
         ..Default::default()
     });
     robots[0].core.source =
@@ -92,7 +93,7 @@ fn main() {
     robots[1].core.compile();
 
     robots.push(Robot {
-        x: 8,
+        x: 5,
         y: 0,
         direction: (0, 1),
         team: 1,
@@ -147,6 +148,7 @@ fn main() {
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::new(8, 189, 189, 255));
 
+        robots[0].draw_core(&mut d);
         draw_plane(&mut d, &field);
 
         let pos = coord_to_pos(3, 2, &field);
@@ -160,6 +162,5 @@ fn main() {
         for robot in robots.iter() {
             draw_robot(&mut d, &robot, &field, &sprites);
         }
-        robots[0].draw_core(&mut d);
     }
 }

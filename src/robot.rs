@@ -40,6 +40,7 @@ pub struct Robot {
 
     pub core: Core,
     pub gun_loaded: bool,
+    pub aoi: Vec<(i32, i32)>, // Area of influence
 }
 
 impl Default for Robot {
@@ -70,6 +71,7 @@ impl Default for Robot {
                 l: false,
             },
             gun_loaded: true,
+            aoi: vec![],
         }
     }
 }
@@ -125,7 +127,7 @@ impl Robot {
     }
 
     pub fn draw_core(&self, d: &mut RaylibDrawHandle) {
-        d.draw_rectangle(50, 50, 800, 200, Color::BLACK);
+        d.draw_rectangle(50, 50, 800, 2000, Color::BLACK);
         d.draw_text(
             format!(
                 "A: {:0>5} B: {:0>5} C: {:0>5} IP: {:0>5}",
@@ -137,6 +139,35 @@ impl Robot {
             40,
             Color::WHITE,
         );
+
+        let line: usize = match self.core.instructions[self.core.ip as usize] {
+            Nop(line) => line,
+            Mov(line, _, _) => line,
+            Add(line, _, _) => line,
+            Sub(line, _, _) => line,
+            Cmp(line, _, _) => line,
+            And(line, _, _) => line,
+            Or(line, _, _) => line,
+            Xor(line, _, _) => line,
+            Not(line, _) => line,
+
+            Jmp(line, _) => line,
+            Je(line, _) => line,
+            Jg(line, _) => line,
+            Jl(line, _) => line,
+
+            Fwd(line) => line,
+            Rol(line) => line,
+            Ror(line) => line,
+
+            Sht(line) => line,
+            Rld(line) => line,
+            _ => 0,
+        };
+
+        let ip_y = 90 + line as i32 * 60;
+        d.draw_rectangle(50, ip_y, 800, 40, Color::GRAY);
+        d.draw_text(self.core.source.as_str(), 50, 90, 40, Color::WHITE);
     }
 }
 
@@ -150,75 +181,75 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
     let inst = robots[i].core.instructions[robots[i].core.ip as usize].clone();
     match inst {
         // General purpouse
-        Nop => {}
+        Nop(_) => {}
 
-        Mov(dest, src) => {
+        Mov(_, dest, src) => {
             let src = robots[i].resolve_value(&src);
             robots[i].store_value(&dest, src);
         }
 
-        Add(dest, src) => {
+        Add(_, dest, src) => {
             let res = robots[i].resolve_value(&dest) + robots[i].resolve_value(&src);
             robots[i].store_value(&dest, res);
             robots[i].update_flags(res);
         }
 
-        Sub(dest, src) => {
+        Sub(_, dest, src) => {
             let res = robots[i].resolve_value(&dest) - robots[i].resolve_value(&src);
             robots[i].store_value(&dest, res);
             robots[i].update_flags(res);
         }
 
-        Cmp(dest, src) => {
+        Cmp(_, dest, src) => {
             let res = robots[i].resolve_value(&dest) - robots[i].resolve_value(&src);
             robots[i].update_flags(res);
         }
 
-        And(dest, src) => {
+        And(_, dest, src) => {
             let res = robots[i].resolve_value(&dest) & robots[i].resolve_value(&src);
             robots[i].store_value(&dest, res);
             robots[i].update_flags(res);
         }
 
-        Or(dest, src) => {
+        Or(_, dest, src) => {
             let res = robots[i].resolve_value(&dest) | robots[i].resolve_value(&src);
             robots[i].store_value(&dest, res);
             robots[i].update_flags(res);
         }
 
-        Xor(dest, src) => {
+        Xor(_, dest, src) => {
             let res = robots[i].resolve_value(&dest) ^ robots[i].resolve_value(&src);
             robots[i].store_value(&dest, res);
             robots[i].update_flags(res);
         }
 
-        Not(dest) => {
+        Not(_, dest) => {
             let res = !robots[i].resolve_value(&dest);
             robots[i].store_value(&dest, res);
             robots[i].update_flags(res);
         }
 
         // Control flow
-        Jmp(dest) => {
+        Jmp(_, dest) => {
             let dest = robots[i].resolve_value(&dest);
             robots[i].core.ip = dest - 1;
         }
 
-        Je(dest) => {
+        Je(_, dest) => {
             if robots[i].core.e {
                 let dest = robots[i].resolve_value(&dest);
                 robots[i].core.ip = dest - 1;
             }
         }
 
-        Jg(dest) => {
+        Jg(_, dest) => {
             if robots[i].core.g {
                 let dest = robots[i].resolve_value(&dest);
                 robots[i].core.ip = dest - 1;
             }
         }
 
-        Jl(dest) => {
+        Jl(_, dest) => {
             if robots[i].core.l {
                 let dest = robots[i].resolve_value(&dest);
                 robots[i].core.ip = dest - 1;
@@ -226,14 +257,14 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
         }
 
         // Motor
-        Fwd => {
+        Fwd(_) => {
             robots[i].x += robots[i].direction.0;
             robots[i].y += robots[i].direction.1;
             robots[i].x = std::cmp::min(field.width - 1, std::cmp::max(0, robots[i].x));
             robots[i].y = std::cmp::min(field.height - 1, std::cmp::max(0, robots[i].y));
         }
 
-        Rol => match robots[i].direction {
+        Rol(_) => match robots[i].direction {
             (0, 1) => robots[i].direction = (1, 0),
             (1, 0) => robots[i].direction = (0, -1),
             (0, -1) => robots[i].direction = (-1, 0),
@@ -241,7 +272,7 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
             (_, _) => println!("Robot has impossible direction"),
         },
 
-        Ror => match robots[i].direction {
+        Ror(_) => match robots[i].direction {
             (0, 1) => robots[i].direction = (-1, 0),
             (-1, 0) => robots[i].direction = (0, -1),
             (0, -1) => robots[i].direction = (1, 0),
@@ -249,7 +280,7 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
             (_, _) => println!("Robot has impossible direction"),
         },
 
-        Sht => {
+        Sht(_) => {
             if robots[i].bullets > 0 && robots[i].gun_loaded {
                 robots[i].bullets -= 1;
                 robots[i].gun_loaded = false;
@@ -284,7 +315,7 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
             }
         }
 
-        Rld => {
+        Rld(_) => {
             robots[i].gun_loaded = true;
         }
 

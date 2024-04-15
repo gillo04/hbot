@@ -12,36 +12,36 @@ pub enum Value {
 // Abstract syntax tree
 #[derive(Debug, Clone)]
 pub enum Instruction {
-    Label(String),
-    Nop,
-    Mov(Value, Value),
+    Label(usize, String),
+    Nop(usize),
+    Mov(usize, Value, Value),
 
     // Motor
-    Fwd,
-    Rol,
-    Ror,
+    Fwd(usize),
+    Rol(usize),
+    Ror(usize),
 
     // Gun
-    Sht,
-    Rld,
+    Sht(usize),
+    Rld(usize),
 
     // Vision
-    See,
+    See(usize),
 
     // Control flow
-    Jmp(Value),
-    Je(Value),
-    Jg(Value),
-    Jl(Value),
+    Jmp(usize, Value),
+    Je(usize, Value),
+    Jg(usize, Value),
+    Jl(usize, Value),
 
     // Arithmetic and logic
-    Add(Value, Value),
-    Sub(Value, Value),
-    Cmp(Value, Value),
-    And(Value, Value),
-    Or(Value, Value),
-    Xor(Value, Value),
-    Not(Value),
+    Add(usize, Value, Value),
+    Sub(usize, Value, Value),
+    Cmp(usize, Value, Value),
+    And(usize, Value, Value),
+    Or(usize, Value, Value),
+    Xor(usize, Value, Value),
+    Not(usize, Value),
 }
 
 use lexer::*;
@@ -81,6 +81,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                     == (Token {
                         value: String::from(","),
                         t: TokenType::Punctuator,
+                        line: 0,
                     })
                 && (toks[j + 3].t != TokenType::Opcode && toks[j + 3].t != TokenType::Punctuator)
             {
@@ -96,7 +97,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "nop" => {
                 if check_arg_c(arg_c, 0) {
                     *i += 1;
-                    Some(Nop)
+                    Some(Nop(toks[j].line))
                 } else {
                     None
                 }
@@ -105,6 +106,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 2) {
                     *i += 4;
                     Some(Mov(
+                        toks[j].line,
                         token_to_value(&toks[j + 1]),
                         token_to_value(&toks[j + 3]),
                     ))
@@ -116,7 +118,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "fwd" => {
                 if check_arg_c(arg_c, 0) {
                     *i += 1;
-                    Some(Fwd)
+                    Some(Fwd(toks[j].line))
                 } else {
                     None
                 }
@@ -124,7 +126,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "rol" => {
                 if check_arg_c(arg_c, 0) {
                     *i += 1;
-                    Some(Rol)
+                    Some(Rol(toks[j].line))
                 } else {
                     None
                 }
@@ -132,7 +134,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "ror" => {
                 if check_arg_c(arg_c, 0) {
                     *i += 1;
-                    Some(Ror)
+                    Some(Ror(toks[j].line))
                 } else {
                     None
                 }
@@ -141,7 +143,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "sht" => {
                 if check_arg_c(arg_c, 0) {
                     *i += 1;
-                    Some(Sht)
+                    Some(Sht(toks[j].line))
                 } else {
                     None
                 }
@@ -149,7 +151,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "rld" => {
                 if check_arg_c(arg_c, 0) {
                     *i += 1;
-                    Some(Rld)
+                    Some(Rld(toks[j].line))
                 } else {
                     None
                 }
@@ -158,7 +160,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "see" => {
                 if check_arg_c(arg_c, 0) {
                     *i += 1;
-                    Some(See)
+                    Some(See(toks[j].line))
                 } else {
                     None
                 }
@@ -167,7 +169,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "jmp" => {
                 if check_arg_c(arg_c, 1) {
                     *i += 2;
-                    Some(Jmp(token_to_value(&toks[j + 1])))
+                    Some(Jmp(toks[j].line, token_to_value(&toks[j + 1])))
                 } else {
                     None
                 }
@@ -175,7 +177,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "je" => {
                 if check_arg_c(arg_c, 1) {
                     *i += 2;
-                    Some(Je(token_to_value(&toks[j + 1])))
+                    Some(Je(toks[j].line, token_to_value(&toks[j + 1])))
                 } else {
                     None
                 }
@@ -183,7 +185,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "jg" => {
                 if check_arg_c(arg_c, 1) {
                     *i += 2;
-                    Some(Jg(token_to_value(&toks[j + 1])))
+                    Some(Jg(toks[j].line, token_to_value(&toks[j + 1])))
                 } else {
                     None
                 }
@@ -191,7 +193,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "jl" => {
                 if check_arg_c(arg_c, 1) {
                     *i += 2;
-                    Some(Jl(token_to_value(&toks[j + 1])))
+                    Some(Jl(toks[j].line, token_to_value(&toks[j + 1])))
                 } else {
                     None
                 }
@@ -201,6 +203,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 2) {
                     *i += 4;
                     Some(Add(
+                        toks[j].line,
                         token_to_value(&toks[j + 1]),
                         token_to_value(&toks[j + 3]),
                     ))
@@ -212,6 +215,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 2) {
                     *i += 4;
                     Some(Sub(
+                        toks[j].line,
                         token_to_value(&toks[j + 1]),
                         token_to_value(&toks[j + 3]),
                     ))
@@ -223,6 +227,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 2) {
                     *i += 4;
                     Some(Cmp(
+                        toks[j].line,
                         token_to_value(&toks[j + 1]),
                         token_to_value(&toks[j + 3]),
                     ))
@@ -234,6 +239,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 2) {
                     *i += 4;
                     Some(And(
+                        toks[j].line,
                         token_to_value(&toks[j + 1]),
                         token_to_value(&toks[j + 3]),
                     ))
@@ -245,6 +251,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 2) {
                     *i += 4;
                     Some(Or(
+                        toks[j].line,
                         token_to_value(&toks[j + 1]),
                         token_to_value(&toks[j + 3]),
                     ))
@@ -256,6 +263,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 2) {
                     *i += 4;
                     Some(Xor(
+                        toks[j].line,
                         token_to_value(&toks[j + 1]),
                         token_to_value(&toks[j + 3]),
                     ))
@@ -266,7 +274,7 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             "not" => {
                 if check_arg_c(arg_c, 1) {
                     *i += 2;
-                    Some(Not(token_to_value(&toks[j + 1])))
+                    Some(Not(toks[j].line, token_to_value(&toks[j + 1])))
                 } else {
                     None
                 }
@@ -286,10 +294,11 @@ fn p_label(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
             == (Token {
                 t: TokenType::Punctuator,
                 value: String::from(":"),
+                line: 0,
             })
     {
         *i += 2;
-        return Some(Label(toks[j].value.clone()));
+        return Some(Label(toks[j].line, toks[j].value.clone()));
     }
     return None;
 }
@@ -311,7 +320,7 @@ pub fn parse(source: &String) -> Vec<Instruction> {
         }
 
         if let Some(inst) = p_label(&tokens, &mut i) {
-            if let Label(id) = &inst {
+            if let Label(_, id) = &inst {
                 label_table.push((id.clone(), inst_count))
             }
             out.push(inst);
@@ -324,7 +333,7 @@ pub fn parse(source: &String) -> Vec<Instruction> {
     // Resolve labels
     for inst in out.iter_mut() {
         match inst {
-            Jmp(val) | Je(val) | Jg(val) | Jl(val) => {
+            Jmp(_, val) | Je(_, val) | Jg(_, val) | Jl(_, val) => {
                 if let Identifier(id) = val {
                     let mut ip: i16 = 0;
                     for (string, address) in &label_table {
@@ -340,7 +349,7 @@ pub fn parse(source: &String) -> Vec<Instruction> {
         }
     }
 
-    out.retain(|x| if let Label(_) = x { false } else { true });
+    out.retain(|x| if let Label(_, _) = x { false } else { true });
 
     for inst in out.iter_mut() {
         println!("{:?}", inst);

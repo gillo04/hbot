@@ -12,6 +12,7 @@ pub enum TokenType {
 pub struct Token {
     pub value: String,
     pub t: TokenType,
+    pub line: usize,
 }
 
 impl PartialEq for Token {
@@ -24,6 +25,7 @@ fn lex_immediate(source: &String, i: &mut usize) -> Option<Token> {
     let mut token = Token {
         value: String::from(""),
         t: TokenType::Immediate,
+        line: 0,
     };
 
     loop {
@@ -46,6 +48,7 @@ fn lex_identifier(source: &String, i: &mut usize) -> Option<Token> {
     let mut token = Token {
         value: String::from(""),
         t: TokenType::Identifier,
+        line: 0,
     };
 
     loop {
@@ -69,6 +72,7 @@ fn lex_punctuator(source: &String, i: &mut usize) -> Option<Token> {
     let mut token = Token {
         value: String::from(""),
         t: TokenType::Punctuator,
+        line: 0,
     };
 
     let punctuators = vec![String::from(","), String::from(":")];
@@ -126,11 +130,15 @@ pub fn lex(source: &String) -> Vec<Token> {
         String::from("ip"),
     ];
 
+    let mut current_line = 0;
     loop {
         // Eat white space
         loop {
             let char = source.chars().nth(i);
             if let Some(c) = char {
+                if c == '\n' {
+                    current_line += 1;
+                }
                 if c.is_whitespace() {
                     i += 1;
                     continue;
@@ -144,7 +152,8 @@ pub fn lex(source: &String) -> Vec<Token> {
         if let Some(_) = char {
             // Immediate values
             let tmp = lex_immediate(&source, &mut i);
-            if let Some(token) = tmp {
+            if let Some(mut token) = tmp {
+                token.line = current_line;
                 tokens.push(token);
                 continue;
             }
@@ -153,6 +162,7 @@ pub fn lex(source: &String) -> Vec<Token> {
             let tmp = lex_identifier(&source, &mut i);
             if let Some(mut token) = tmp {
                 token.value = token.value.to_lowercase();
+                token.line = current_line;
                 if opcodes.contains(&token.value) {
                     token.t = TokenType::Opcode;
                 }
@@ -167,7 +177,8 @@ pub fn lex(source: &String) -> Vec<Token> {
 
             // Punctuators
             let tmp = lex_punctuator(&source, &mut i);
-            if let Some(token) = tmp {
+            if let Some(mut token) = tmp {
+                token.line = current_line;
                 tokens.push(token);
                 continue;
             }
