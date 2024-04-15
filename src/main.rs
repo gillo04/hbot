@@ -46,6 +46,7 @@ enum GameState {
 }
 
 fn main() {
+    // Setup raylib
     let (mut rl, thread) = raylib::init()
         .size(2000, 1500)
         .title("HBot")
@@ -54,6 +55,12 @@ fn main() {
 
     rl.set_target_fps(60);
 
+    let sprites = Image::load_image("sprites.png").expect("Error loading sprites");
+    let sprites = rl
+        .load_texture_from_image(&thread, &sprites)
+        .expect("Failed to convert image to texture");
+
+    // Setup robots
     let player_color = Color::new(251, 97, 7, 255);
     let enemy_color = Color::new(0, 127, 255, 255);
 
@@ -152,7 +159,7 @@ fn main() {
 
         // Draw robots
         for robot in robots.iter() {
-            draw_robot(&mut d, &robot, &field);
+            draw_robot(&mut d, &robot, &field, &sprites);
         }
         robots[0].draw_core(&mut d);
     }

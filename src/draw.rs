@@ -62,41 +62,79 @@ pub fn draw_plane(d: &mut RaylibDrawHandle, field: &Field) {
     }
 }
 
-pub fn draw_robot(d: &mut RaylibDrawHandle, robot: &Robot, field: &Field) {
+pub fn draw_robot(d: &mut RaylibDrawHandle, robot: &Robot, field: &Field, sprites: &Texture2D) {
     let robot_pos = coord_to_pos(robot.x, robot.y, &field);
-    let direction_pos = coord_to_pos(
-        robot.x + robot.direction.0,
-        robot.y + robot.direction.1,
-        &field,
-    );
-    draw_tile(
-        d,
-        direction_pos.x as i32,
-        direction_pos.y as i32,
-        Color::RED,
-    );
-    draw_block(d, robot_pos.x as i32, robot_pos.y as i32, robot.color);
-    d.draw_text(
-        robot.name.as_str(),
-        robot_pos.x as i32 + 50,
-        robot_pos.y as i32 - T_HEIGHT / 2,
-        30,
-        Color::BLACK,
+
+    // Draw sprite
+    let texture_rect = match robot.direction {
+        (0, -1) => Rectangle {
+            x: 300.,
+            y: 0.,
+            width: 100.,
+            height: 100.,
+        },
+        (1, 0) => Rectangle {
+            x: 500.,
+            y: 0.,
+            width: 100.,
+            height: 100.,
+        },
+        (0, 1) => Rectangle {
+            x: 400.,
+            y: 0.,
+            width: 100.,
+            height: 100.,
+        },
+        (-1, 0) => Rectangle {
+            x: 600.,
+            y: 0.,
+            width: 100.,
+            height: 100.,
+        },
+        _ => Rectangle {
+            x: 0.,
+            y: 0.,
+            width: 100.,
+            height: 100.,
+        },
+    };
+
+    d.draw_texture_pro(
+        sprites,
+        texture_rect,
+        Rectangle {
+            x: robot_pos.x,
+            y: robot_pos.y - T_WIDTH as f32 + T_HEIGHT as f32 / 2.,
+            width: T_WIDTH as f32,
+            height: T_WIDTH as f32,
+        },
+        Vector2::zero(),
+        0.,
+        robot.color,
     );
 
     // Health bar
+    let health_pos = Vector2::new(robot_pos.x, robot_pos.y + 10.);
     d.draw_rectangle(
-        robot_pos.x as i32,
-        robot_pos.y as i32 + 10,
+        health_pos.x as i32,
+        health_pos.y as i32,
         T_WIDTH,
-        10,
+        30,
         Color::RED,
     );
     d.draw_rectangle(
-        robot_pos.x as i32,
-        robot_pos.y as i32 + 10,
+        health_pos.x as i32,
+        health_pos.y as i32,
         (T_WIDTH as f32 * (robot.health as f32 / robot.max_health as f32)) as i32,
-        10,
+        30,
         Color::GREEN,
+    );
+
+    d.draw_text(
+        robot.name.as_str(),
+        health_pos.x as i32,
+        health_pos.y as i32,
+        30,
+        Color::BLACK,
     );
 }
