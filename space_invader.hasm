@@ -7,6 +7,7 @@ main:
     fwd
     rol
     sht
+    rld
     ror
     sub a, 1
     jg right
@@ -18,6 +19,7 @@ main:
     fwd
     ror
     sht
+    rld
     rol
     sub a, 1
     jg left

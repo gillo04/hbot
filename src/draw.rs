@@ -129,6 +129,13 @@ pub fn draw_robot(d: &mut RaylibDrawHandle, robot: &Robot, field: &Field, sprite
         30,
         Color::GREEN,
     );
+    d.draw_rectangle(
+        health_pos.x as i32,
+        health_pos.y as i32 + 30,
+        (T_WIDTH as f32 * (robot.bullets as f32 / 50.)) as i32,
+        10,
+        Color::BLUE,
+    );
 
     d.draw_text(
         robot.name.as_str(),

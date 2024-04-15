@@ -88,6 +88,9 @@ fn main() {
         name: String::from("Robot 3"),
         ..Default::default()
     });
+    robots[1].core.source = fs::read_to_string("turret.hasm").expect("Error loading program");
+    robots[1].core.compile();
+
     robots.push(Robot {
         x: 8,
         y: 0,
@@ -120,9 +123,7 @@ fn main() {
         match game_state {
             GameState::Normal => {
                 if rl.is_key_released(KeyboardKey::KEY_ENTER) {
-                    for i in 0..robots.len() {
-                        step(i, &mut robots, &field);
-                    }
+                    step_game(&mut robots, &field);
                 }
 
                 if rl.is_key_released(KeyboardKey::KEY_SPACE) {
@@ -131,10 +132,8 @@ fn main() {
             }
 
             GameState::Simulating => {
-                if rl.get_time() - sim_time >= 0.1 {
-                    for i in 0..robots.len() {
-                        step(i, &mut robots, &field);
-                    }
+                if rl.get_time() - sim_time >= 0.05 {
+                    step_game(&mut robots, &field);
                     sim_time = rl.get_time();
                 }
 

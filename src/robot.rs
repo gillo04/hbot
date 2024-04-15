@@ -32,11 +32,14 @@ pub struct Robot {
 
     pub max_health: i32,
     pub health: i32,
+    pub bullets: i32,
 
     pub team: i32,
     pub color: Color,
     pub name: String,
+
     pub core: Core,
+    pub gun_loaded: bool,
 }
 
 impl Default for Robot {
@@ -48,10 +51,12 @@ impl Default for Robot {
 
             max_health: 100,
             health: 100,
+            bullets: 100,
 
             team: 1,
             color: Color::RED,
             name: String::from("Unnamed"),
+
             core: Core {
                 source: String::from(""),
                 instructions: vec![],
@@ -64,6 +69,7 @@ impl Default for Robot {
                 g: false,
                 l: false,
             },
+            gun_loaded: true,
         }
     }
 }
@@ -134,7 +140,7 @@ impl Robot {
     }
 }
 
-pub fn step(i: usize, robots: &mut Vec<Robot>, field: &Field) {
+pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
     if robots[i].core.instructions.len() == 0 {
         return;
     }
@@ -244,33 +250,42 @@ pub fn step(i: usize, robots: &mut Vec<Robot>, field: &Field) {
         },
 
         Sht => {
-            let x = robots[i].x * robots[i].direction.0;
-            let y = robots[i].y * robots[i].direction.1;
+            if robots[i].bullets > 0 && robots[i].gun_loaded {
+                robots[i].bullets -= 1;
+                robots[i].gun_loaded = false;
 
-            let mut min_dist = i32::MAX;
-            let mut target: Option<usize> = None;
-            for j in 0..robots.len() {
-                if j == i {
-                    continue;
+                let x = robots[i].x * robots[i].direction.0;
+                let y = robots[i].y * robots[i].direction.1;
+
+                let mut min_dist = i32::MAX;
+                let mut target: Option<usize> = None;
+                for j in 0..robots.len() {
+                    if j == i {
+                        continue;
+                    }
+                    let xe = robots[j].x * robots[i].direction.0;
+                    let ye = robots[j].y * robots[i].direction.1;
+                    let dist = (x.abs() - xe.abs()).abs() + (y.abs() - ye.abs()).abs();
+                    if robots[i].direction.0 == 0 {
+                        if robots[i].x == robots[j].x && y < ye && dist < min_dist {
+                            min_dist = dist;
+                            target = Some(j);
+                        }
+                    } else {
+                        if x < xe && robots[i].y == robots[j].y && dist < min_dist {
+                            min_dist = dist;
+                            target = Some(j);
+                        }
+                    }
                 }
-                let xe = robots[j].x * robots[i].direction.0;
-                let ye = robots[j].y * robots[i].direction.1;
-                let dist = (x.abs() - xe.abs()).abs() + (y.abs() - ye.abs()).abs();
-                if robots[i].direction.0 == 0 {
-                    if robots[i].x == robots[j].x && y < ye && dist < min_dist {
-                        min_dist = dist;
-                        target = Some(j);
-                    }
-                } else {
-                    if x < xe && robots[i].y == robots[j].y && dist < min_dist {
-                        min_dist = dist;
-                        target = Some(j);
-                    }
+                if let Some(t) = target {
+                    robots[t].health -= 10;
                 }
             }
-            if let Some(t) = target {
-                robots[t].health -= 20;
-            }
+        }
+
+        Rld => {
+            robots[i].gun_loaded = true;
         }
 
         _ => {
@@ -278,4 +293,12 @@ pub fn step(i: usize, robots: &mut Vec<Robot>, field: &Field) {
         }
     };
     robots[i].core.ip += 1;
+}
+
+pub fn step_game(robots: &mut Vec<Robot>, field: &Field) {
+    for i in 0..robots.len() {
+        step_robot(i, robots, field);
+    }
+
+    robots.retain(|r| r.health > 0);
 }
