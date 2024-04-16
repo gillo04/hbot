@@ -3,7 +3,9 @@ pub mod parser;
 pub mod robot;
 
 use raylib::prelude::*;
+use std::ffi::{CStr, CString};
 use std::fs;
+use std::os::raw::c_char;
 
 use draw::*;
 use robot::*;
@@ -136,11 +138,51 @@ fn main() {
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::new(8, 189, 189, 255));
 
+        // Draw UI
+        d.gui_set_style(
+            GuiControl::DEFAULT,
+            GuiDefaultProperty::TEXT_SIZE as i32,
+            50,
+        );
+
+        // Start/stop button
+        let sim_btn_str = match game_state {
+            GameState::Normal => CStr::from_bytes_with_nul(b"Start\0"),
+            GameState::Simulating => CStr::from_bytes_with_nul(b"Stop\0"),
+        }
+        .expect("Failed to create CStr");
+
+        if d.gui_button(
+            Rectangle {
+                x: 1000.,
+                y: 0.,
+                width: 300.,
+                height: 100.,
+            },
+            Some(sim_btn_str),
+        ) {
+            game_state = match game_state {
+                GameState::Normal => GameState::Simulating,
+                GameState::Simulating => GameState::Normal,
+            };
+        }
+
+        // Step button
+        if d.gui_button(
+            Rectangle {
+                x: 1300.,
+                y: 0.,
+                width: 300.,
+                height: 100.,
+            },
+            Some(CStr::from_bytes_with_nul(b"Step\0").expect("Failed to create CStr")),
+        ) {
+            step_game(&mut robots, &field);
+        }
+
+        // Draw play field
         robots[0].draw_core(&mut d);
         draw_plane(&mut d, &field);
-
-        let pos = coord_to_pos(3, 2, &field);
-        // draw_block(&mut d, pos.x as i32, pos.y as i32, player_color);
 
         /*let mouse = d.get_mouse_position();
         let (j, i) = pos_to_coord(mouse, &field);
