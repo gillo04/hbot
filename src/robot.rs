@@ -76,6 +76,12 @@ impl Default for Robot {
     }
 }
 
+enum Action {
+    None,
+    Move(i32, i32),
+    Shoot(usize), // Index of target robot
+}
+
 impl Robot {
     pub fn resolve_value(&self, val: &Value) -> i16 {
         match val {
@@ -171,9 +177,10 @@ impl Robot {
     }
 }
 
-pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
+pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) -> Action {
+    let mut action = Action::None;
     if robots[i].core.instructions.len() == 0 {
-        return;
+        return action;
     }
     if robots[i].core.ip as usize >= robots[i].core.instructions.len() {
         robots[i].core.ip = 0;
@@ -258,10 +265,16 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
 
         // Motor
         Fwd(_) => {
-            robots[i].x += robots[i].direction.0;
-            robots[i].y += robots[i].direction.1;
-            robots[i].x = std::cmp::min(field.width - 1, std::cmp::max(0, robots[i].x));
-            robots[i].y = std::cmp::min(field.height - 1, std::cmp::max(0, robots[i].y));
+            action = Action::Move(
+                std::cmp::min(
+                    field.width - 1,
+                    std::cmp::max(0, robots[i].x + robots[i].direction.0),
+                ),
+                std::cmp::min(
+                    field.height - 1,
+                    std::cmp::max(0, robots[i].y + robots[i].direction.1),
+                ),
+            );
         }
 
         Rol(_) => match robots[i].direction {
@@ -310,7 +323,7 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
                     }
                 }
                 if let Some(t) = target {
-                    robots[t].health -= 10;
+                    action = Action::Shoot(t);
                 }
             }
         }
@@ -324,11 +337,28 @@ pub fn step_robot(i: usize, robots: &mut Vec<Robot>, field: &Field) {
         }
     };
     robots[i].core.ip += 1;
+    return action;
 }
 
 pub fn step_game(robots: &mut Vec<Robot>, field: &Field) {
+    let mut actions = vec![];
     for i in 0..robots.len() {
-        step_robot(i, robots, field);
+        actions.push(step_robot(i, robots, field));
+    }
+
+    // Execute all moves
+    for i in 0..robots.len() {
+        if let Action::Move(x, y) = actions[i] {
+            robots[i].x = x;
+            robots[i].y = y;
+        }
+    }
+
+    // Execute all shots
+    for i in 0..robots.len() {
+        if let Action::Shoot(target) = actions[i] {
+            robots[target].health -= 10;
+        }
     }
 
     robots.retain(|r| r.health > 0);

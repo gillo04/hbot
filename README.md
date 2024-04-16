@@ -5,7 +5,8 @@ HBot is a coding strategy game where you battle with robots, until only one rema
 At the moment, HBot is still in very early development. You can run a few programs and see how robots interact together, but it's not anywhere near what the end goal is.
 
 ## The HBot language
-TODO
+The HBot language is an assembly-like programming language, which is used to program your battle robots. The instructions get executed in order from the first to the last. Once the program counte arrives at the last instruction, it loops back to the first instruction. You can control the flow of the program with branching instructions such as `jmp` and `je`.
+To avoid robots behaving in different ways based on their programs are stepped during a battle, some instructions get executed in a specific order: all instructions relating to the motor (rotations and move forewad) get executed before all turret operation (shooting).
 
 ## Default commands and registers
 Here is a list of the basic instructions the robot can execute and the general purpose registers it has access to. Generally instructions are in the form `<opcode> <destination>, <source>`. In this reference we'll use the following symbols to indicate what operand can be:

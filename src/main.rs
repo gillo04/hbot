@@ -81,18 +81,6 @@ fn main() {
     robots[0].core.compile();
 
     robots.push(Robot {
-        x: 8,
-        y: 3,
-        direction: (0, 1),
-        team: 1,
-        color: enemy_color,
-        name: String::from("Robot 3"),
-        ..Default::default()
-    });
-    robots[1].core.source = fs::read_to_string("turret.hasm").expect("Error loading program");
-    robots[1].core.compile();
-
-    robots.push(Robot {
         x: 5,
         y: 0,
         direction: (0, 1),
@@ -101,8 +89,8 @@ fn main() {
         name: String::from("Robot 2"),
         ..Default::default()
     });
-
-    /*robots[1].core.source = fs::read_to_string("turret.hasm").expect("Error loading program");
+    /*robots[1].core.source =
+        fs::read_to_string("space_invader.hasm").expect("Error loading program");
     robots[1].core.compile();*/
 
     let mut game_state = GameState::Normal;
