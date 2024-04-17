@@ -17,6 +17,7 @@ Alternatively, you can download one of the releases on the github page, but it's
 
 # The HBot language
 The HBot language is an assembly-like programming language, which is used to program your battle robots. The instructions get executed in order from the first to the last. Once the program counte arrives at the last instruction, it loops back to the first instruction. You can control the flow of the program with branching instructions such as `jmp` and `je`.
+
 To avoid robots behaving in different ways based on their programs are stepped during a battle, some instructions get executed in a specific order: all instructions relating to the motor (rotations and move forewad) get executed before all turret operation (shooting).
 
 ## Default commands and registers

@@ -32,16 +32,21 @@ fn coord_to_pos(j: i32, i: i32, field: &Field) -> Vector2 {
 
 // Converts screen position to isometric grid coordinates
 // The tiles have their origin on the left corner
-fn pos_to_coord(pos: Vector2, field: &Field) -> (i32, i32) {
+fn pos_to_coord(pos: Vector2, field: &Field) -> Option<(i32, i32)> {
     let x = pos.x - field.x as f32;
     let y = pos.y - field.y as f32;
 
-    let j = (x / T_WIDTH as f32) + (y / T_HEIGHT as f32);
-    let i = (y / T_HEIGHT as f32) - (x / T_WIDTH as f32) + 1.;
+    let j = ((x / T_WIDTH as f32) + (y / T_HEIGHT as f32)) as i32;
+    let i = ((y / T_HEIGHT as f32) - (x / T_WIDTH as f32) + 1.) as i32;
 
-    (j as i32, i as i32)
+    if j >= 0 && j < field.width && i >= 0 && i < field.height {
+        return Some((j, i));
+    }
+
+    return None;
 }
 
+#[derive(PartialEq)]
 enum GameState {
     Normal,
     Simulating,
@@ -97,6 +102,7 @@ fn main() {
 
     let mut game_state = GameState::Normal;
     let mut sim_time = rl.get_time();
+    let mut selected_robot: Option<usize> = None;
     while !rl.window_should_close() {
         let center = Vector2::new(
             rl.get_screen_width() as f32 / 2.0,
@@ -109,6 +115,10 @@ fn main() {
             width: 10,
             height: 10,
         };
+
+        let mouse = rl.get_mouse_position();
+        let hover_tile = pos_to_coord(mouse, &field);
+        let time = rl.get_time();
 
         // Handle input and update
         match game_state {
@@ -134,6 +144,21 @@ fn main() {
             }
         }
 
+        // Handle robot selection
+        if rl.is_mouse_button_released(MouseButton::MOUSE_LEFT_BUTTON) {
+            if let Some(hover_tile) = hover_tile {
+                selected_robot = None;
+                let mut found_robot = false;
+                for (i, robot) in robots.iter().enumerate() {
+                    if robot.x == hover_tile.0 && robot.y == hover_tile.1 {
+                        selected_robot = Some(i);
+                        found_robot = true;
+                        break;
+                    }
+                }
+            }
+        }
+
         // Draw
         let mut d = rl.begin_drawing(&thread);
         d.clear_background(Color::new(8, 189, 189, 255));
@@ -147,8 +172,8 @@ fn main() {
 
         // Start/stop button
         let sim_btn_str = match game_state {
-            GameState::Normal => CStr::from_bytes_with_nul(b"Start\0"),
             GameState::Simulating => CStr::from_bytes_with_nul(b"Stop\0"),
+            _ => CStr::from_bytes_with_nul(b"Start\0"),
         }
         .expect("Failed to create CStr");
 
@@ -161,9 +186,10 @@ fn main() {
             },
             Some(sim_btn_str),
         ) {
-            game_state = match game_state {
-                GameState::Normal => GameState::Simulating,
-                GameState::Simulating => GameState::Normal,
+            match game_state {
+                GameState::Normal => game_state = GameState::Simulating,
+                GameState::Simulating => game_state = GameState::Normal,
+                _ => (),
             };
         }
 
@@ -177,20 +203,52 @@ fn main() {
             },
             Some(CStr::from_bytes_with_nul(b"Step\0").expect("Failed to create CStr")),
         ) {
-            step_game(&mut robots, &field);
+            if game_state == GameState::Normal {
+                step_game(&mut robots, &field);
+            }
         }
 
-        // Draw play field
-        robots[0].draw_core(&mut d);
-        draw_plane(&mut d, &field);
+        // Add button
+        if d.gui_button(
+            Rectangle {
+                x: 1600.,
+                y: 0.,
+                width: 300.,
+                height: 100.,
+            },
+            Some(CStr::from_bytes_with_nul(b"Add robot\0").expect("Failed to create CStr")),
+        ) {}
 
-        /*let mouse = d.get_mouse_position();
-        let (j, i) = pos_to_coord(mouse, &field);
-        let selection_pos = coord_to_pos(j, i, &field);*/
+        // Draw play field
+        // robots[0].draw_core(&mut d);
+        draw_plane(&mut d, &field);
 
         // Draw robots
         for robot in robots.iter() {
             draw_robot(&mut d, &robot, &field, &sprites);
+        }
+
+        // Draw hover tile
+        if let Some(hover_tile) = hover_tile {
+            let selection_pos = coord_to_pos(hover_tile.0, hover_tile.1, &field);
+            draw_block(
+                &mut d,
+                selection_pos.x as i32,
+                selection_pos.y as i32,
+                Color::new(255, 0, 0, ((time * 4.).sin() * 40. + 130.) as u8),
+            );
+        }
+
+        // Draw UI
+        if let Some(r) = selected_robot {
+            let selection_pos = coord_to_pos(robots[r].x, robots[r].y, &field);
+            draw_block(
+                &mut d,
+                selection_pos.x as i32,
+                selection_pos.y as i32,
+                Color::new(255, 0, 0, 130 as u8),
+            );
+            draw_robot_info(&mut d, &robots[r], &sprites);
         }
     }
 }

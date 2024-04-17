@@ -149,3 +149,64 @@ pub fn draw_robot(d: &mut RaylibDrawHandle, robot: &Robot, field: &Field, sprite
         Color::BLACK,
     );
 }
+
+pub fn draw_robot_info(d: &mut RaylibDrawHandle, robot: &Robot, sprites: &Texture2D) {
+    // Draw panel
+    let info_width = 500;
+    let info_height = 800;
+
+    let info_rect = Rectangle {
+        x: (d.get_screen_width() - info_width) as f32,
+        y: (d.get_screen_height() / 2 - info_height / 2) as f32,
+        width: info_width as f32,
+        height: info_height as f32,
+    };
+
+    d.draw_rectangle_rec(info_rect, Color::LIGHTGRAY);
+
+    // Draw name
+    let text_size =
+        raylib::core::text::measure_text_ex(d.get_font_default(), robot.name.as_str(), 50., 1.);
+    d.draw_text(
+        robot.name.as_str(),
+        (info_rect.x + info_rect.width / 2. - text_size.x / 2.) as i32,
+        info_rect.y as i32 + 10,
+        50,
+        Color::BLACK,
+    );
+
+    // Draw sprite
+    let sprite_size = 400.;
+    d.draw_texture_pro(
+        sprites,
+        Rectangle {
+            x: 500.,
+            y: 0.,
+            width: 100.,
+            height: 100.,
+        },
+        Rectangle {
+            x: info_rect.x + info_rect.width / 2. - sprite_size / 2.,
+            y: info_rect.y + 30.,
+            width: sprite_size,
+            height: sprite_size,
+        },
+        Vector2::zero(),
+        0.,
+        robot.color,
+    );
+    d.draw_text(
+        format!("Health: {:>24}/{}", robot.health, robot.max_health).as_str(),
+        info_rect.x as i32 + 10,
+        info_rect.y as i32 + 440,
+        30,
+        Color::BLACK,
+    );
+    d.draw_text(
+        format!("Bullets: {:>29}", robot.bullets).as_str(),
+        info_rect.x as i32 + 10,
+        info_rect.y as i32 + 470,
+        30,
+        Color::BLACK,
+    );
+}
