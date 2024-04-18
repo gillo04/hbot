@@ -52,6 +52,11 @@ enum GameState {
     Simulating,
 }
 
+enum AnimState {
+    Idle,
+    Moving,
+}
+
 fn main() {
     // Setup raylib
     let (mut rl, thread) = raylib::init()
@@ -96,13 +101,16 @@ fn main() {
         name: String::from("Robot 2"),
         ..Default::default()
     });
-    /*robots[1].core.source =
-        fs::read_to_string("space_invader.hasm").expect("Error loading program");
-    robots[1].core.compile();*/
+    robots[1].core.source = fs::read_to_string("turret.hasm").expect("Error loading program");
+    robots[1].core.compile();
 
     let mut game_state = GameState::Normal;
-    let mut sim_time = rl.get_time();
     let mut selected_robot: Option<usize> = None;
+
+    let anim_duration = 0.1;
+    let mut sim_time = rl.get_time();
+    let mut animation_state = AnimState::Idle;
+    let mut rob_pos_snapshot = vec![];
     while !rl.window_should_close() {
         let center = Vector2::new(
             rl.get_screen_width() as f32 / 2.0,
@@ -124,6 +132,12 @@ fn main() {
         match game_state {
             GameState::Normal => {
                 if rl.is_key_released(KeyboardKey::KEY_ENTER) {
+                    animation_state = AnimState::Moving;
+                    rob_pos_snapshot.clear();
+                    for r in robots.iter() {
+                        rob_pos_snapshot.push((r.x, r.y));
+                    }
+                    sim_time = rl.get_time();
                     step_game(&mut robots, &field);
                 }
 
@@ -133,15 +147,25 @@ fn main() {
             }
 
             GameState::Simulating => {
-                if rl.get_time() - sim_time >= 0.05 {
-                    step_game(&mut robots, &field);
+                if time - sim_time >= anim_duration {
+                    animation_state = AnimState::Moving;
+                    rob_pos_snapshot.clear();
+                    for r in robots.iter() {
+                        rob_pos_snapshot.push((r.x, r.y));
+                    }
                     sim_time = rl.get_time();
+                    step_game(&mut robots, &field);
                 }
 
                 if rl.is_key_released(KeyboardKey::KEY_SPACE) {
                     game_state = GameState::Normal;
                 }
             }
+        }
+
+        // Handle animation state
+        if time - sim_time >= anim_duration {
+            animation_state = AnimState::Idle;
         }
 
         // Handle robot selection
@@ -224,8 +248,25 @@ fn main() {
         draw_plane(&mut d, &field);
 
         // Draw robots
-        for robot in robots.iter() {
-            draw_robot(&mut d, &robot, &field, &sprites);
+        match animation_state {
+            AnimState::Idle => {
+                for (i, robot) in robots.iter().enumerate() {
+                    draw_robot(&mut d, &robot, &field, &sprites, (0, 0), 1.);
+                }
+            }
+
+            AnimState::Moving => {
+                for (i, robot) in robots.iter().enumerate() {
+                    draw_robot(
+                        &mut d,
+                        &robot,
+                        &field,
+                        &sprites,
+                        rob_pos_snapshot[i],
+                        (time - sim_time) as f32 / anim_duration as f32,
+                    );
+                }
+            }
         }
 
         // Draw hover tile

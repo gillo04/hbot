@@ -13,6 +13,10 @@ pub struct Core {
     pub c: i16,
     pub ip: i16,
 
+    pub dir: i16,
+    pub cx: i16
+    pub cy: i16,
+
     // Flags
     pub e: bool,
     pub g: bool,

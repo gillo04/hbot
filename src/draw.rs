@@ -24,7 +24,7 @@ pub fn draw_block(d: &mut RaylibDrawHandle, x: i32, y: i32, color: Color) {
         Vector2::new((x + T_WIDTH / 2) as f32, (y + T_HEIGHT / 2) as f32),
     ];
 
-    let height = Vector2::new(0., -T_HEIGHT as f32 / 2.);
+    let height = Vector2::new(0., -T_HEIGHT as f32);
     draw_tile(d, x, y + height.y as i32, color);
 
     d.draw_triangle(pts[0], pts[2], pts[2] + height, color);
@@ -62,8 +62,22 @@ pub fn draw_plane(d: &mut RaylibDrawHandle, field: &Field) {
     }
 }
 
-pub fn draw_robot(d: &mut RaylibDrawHandle, robot: &Robot, field: &Field, sprites: &Texture2D) {
-    let robot_pos = coord_to_pos(robot.x, robot.y, &field);
+pub fn draw_robot(
+    d: &mut RaylibDrawHandle,
+    robot: &Robot,
+    field: &Field,
+    sprites: &Texture2D,
+    start_pos: (i32, i32),
+    t: f32,
+) {
+    let end_pos = coord_to_pos(robot.x, robot.y, &field);
+    let start_pos = coord_to_pos(start_pos.0, start_pos.1, &field);
+    /*let robot_pos = Vector2 {
+        x: start_pos.x + (end_pos.x - start_pos.x) * (t * t),
+        y: start_pos.y + (end_pos.y - start_pos.y) * (t * t),
+    };*/
+    let robot_pos = start_pos.lerp(end_pos, t);
+
     for t in robot.aoi.iter() {
         let t_pos = coord_to_pos(t.0 + robot.x, t.1 + robot.y, &field);
         draw_tile(d, t_pos.x as i32, t_pos.y as i32, Color::RED);

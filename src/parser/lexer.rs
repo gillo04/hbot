@@ -101,7 +101,7 @@ pub fn lex(source: &String) -> Vec<Token> {
         String::from("fwd"),
         String::from("rol"),
         String::from("ror"),
-        // Gun
+        // Turret
         String::from("sht"),
         String::from("rld"),
         // Vision
@@ -119,14 +119,18 @@ pub fn lex(source: &String) -> Vec<Token> {
         String::from("or"),
         String::from("xor"),
         String::from("not"),
+        // Sensors
+        String::from("rad"),
+        String::from("chk"),
     ];
 
     let registers = vec![
         String::from("a"),
         String::from("b"),
         String::from("c"),
-        String::from("x"),
-        String::from("y"),
+        String::from("dir"),
+        String::from("cx"),
+        String::from("cy"),
         String::from("ip"),
     ];
 
