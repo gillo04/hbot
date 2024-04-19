@@ -42,6 +42,10 @@ pub enum Instruction {
     Or(usize, Value, Value),
     Xor(usize, Value, Value),
     Not(usize, Value),
+
+    // Sensors
+    Rad(usize),
+    Chk(usize),
 }
 
 use lexer::*;
@@ -275,6 +279,22 @@ fn p_instruction(toks: &Vec<Token>, i: &mut usize) -> Option<Instruction> {
                 if check_arg_c(arg_c, 1) {
                     *i += 2;
                     Some(Not(toks[j].line, token_to_value(&toks[j + 1])))
+                } else {
+                    None
+                }
+            }
+            "rad" => {
+                if check_arg_c(arg_c, 0) {
+                    *i += 1;
+                    Some(Rad(toks[j].line))
+                } else {
+                    None
+                }
+            }
+            "chk" => {
+                if check_arg_c(arg_c, 0) {
+                    *i += 1;
+                    Some(Chk(toks[j].line))
                 } else {
                     None
                 }

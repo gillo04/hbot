@@ -3,6 +3,7 @@ pub mod parser;
 pub mod robot;
 
 use raylib::prelude::*;
+use rfd::FileDialog;
 use std::ffi::{CStr, CString};
 use std::fs;
 use std::os::raw::c_char;
@@ -50,6 +51,7 @@ fn pos_to_coord(pos: Vector2, field: &Field) -> Option<(i32, i32)> {
 enum GameState {
     Normal,
     Simulating,
+    AddingRobot,
 }
 
 enum AnimState {
@@ -161,6 +163,8 @@ fn main() {
                     game_state = GameState::Normal;
                 }
             }
+
+            GameState::AddingRobot => {}
         }
 
         // Handle animation state
@@ -170,14 +174,47 @@ fn main() {
 
         // Handle robot selection
         if rl.is_mouse_button_released(MouseButton::MOUSE_LEFT_BUTTON) {
-            if let Some(hover_tile) = hover_tile {
-                selected_robot = None;
-                let mut found_robot = false;
-                for (i, robot) in robots.iter().enumerate() {
-                    if robot.x == hover_tile.0 && robot.y == hover_tile.1 {
-                        selected_robot = Some(i);
-                        found_robot = true;
-                        break;
+            match game_state {
+                GameState::AddingRobot => {
+                    let files = FileDialog::new()
+                        .add_filter("text", &["txt", "hasm"])
+                        .set_directory("/")
+                        .pick_file();
+
+                    if let Some(path) = files {
+                        let source = fs::read_to_string(path).expect("Error loading program");
+                        if let Some(hover_tile) = hover_tile {
+                            robots.push(Robot {
+                                x: hover_tile.0,
+                                y: hover_tile.1,
+                                direction: (0, -1),
+                                team: -1,
+                                color: player_color,
+                                name: String::from("new"),
+                                core: Core {
+                                    source,
+                                    ..Default::default()
+                                },
+                                ..Default::default()
+                            });
+                            let last = robots.len() - 1;
+                            robots[last].core.compile();
+                        }
+                    }
+                    game_state = GameState::Normal;
+                }
+
+                _ => {
+                    if let Some(hover_tile) = hover_tile {
+                        selected_robot = None;
+                        let mut found_robot = false;
+                        for (i, robot) in robots.iter().enumerate() {
+                            if robot.x == hover_tile.0 && robot.y == hover_tile.1 {
+                                selected_robot = Some(i);
+                                found_robot = true;
+                                break;
+                            }
+                        }
                     }
                 }
             }
@@ -241,7 +278,9 @@ fn main() {
                 height: 100.,
             },
             Some(CStr::from_bytes_with_nul(b"Add robot\0").expect("Failed to create CStr")),
-        ) {}
+        ) {
+            game_state = GameState::AddingRobot;
+        }
 
         // Draw play field
         // robots[0].draw_core(&mut d);
@@ -271,6 +310,10 @@ fn main() {
 
         // Draw hover tile
         if let Some(hover_tile) = hover_tile {
+            /*if game_state == GameState::AddingRobot {
+                draw_robot_info(&mut d, &robots[r], &sprites);
+            }*/
+
             let selection_pos = coord_to_pos(hover_tile.0, hover_tile.1, &field);
             draw_block(
                 &mut d,

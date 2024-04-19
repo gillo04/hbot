@@ -14,13 +14,34 @@ pub struct Core {
     pub ip: i16,
 
     pub dir: i16,
-    pub cx: i16
+    pub cx: i16,
     pub cy: i16,
 
     // Flags
     pub e: bool,
     pub g: bool,
     pub l: bool,
+}
+
+impl Default for Core {
+    fn default() -> Core {
+        Core {
+            source: String::from(""),
+            instructions: vec![],
+            a: 0,
+            b: 0,
+            c: 0,
+            ip: 0,
+
+            dir: 0,
+            cx: 0,
+            cy: 0,
+
+            e: false,
+            g: false,
+            l: false,
+        }
+    }
 }
 
 impl Core {
@@ -63,16 +84,7 @@ impl Default for Robot {
             name: String::from("Unnamed"),
 
             core: Core {
-                source: String::from(""),
-                instructions: vec![],
-                a: 0,
-                b: 0,
-                c: 0,
-                ip: 0,
-
-                e: false,
-                g: false,
-                l: false,
+                ..Default::default()
             },
             gun_loaded: true,
             aoi: vec![],
@@ -111,6 +123,10 @@ impl Robot {
                 "b" => self.core.b = src,
                 "c" => self.core.c = src,
                 "ip" => self.core.ip = src,
+
+                "dir" => self.core.dir = src,
+                "cx" => self.core.cx = src,
+                "cy" => self.core.cy = src,
                 _ => {
                     println!("Invalid register");
                 }
@@ -172,6 +188,9 @@ impl Robot {
 
             Sht(line) => line,
             Rld(line) => line,
+
+            Rad(line) => line,
+            Chk(line) => line,
             _ => 0,
         };
 
